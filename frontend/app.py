@@ -6,7 +6,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
-DEFAULT_BACKEND = os.getenv("BACKEND_URL", "https://pdf-chatbot-7l3v.onrender.com")
+DEFAULT_BACKEND = st.secrets.get("BACKEND_URL", "http://localhost:8000")
 
 st.set_page_config(page_title="PDF Chatbot", layout="wide")
 st.title("🧠 PDF Chatbot")
