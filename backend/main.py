@@ -238,6 +238,10 @@ class ChatRequest(BaseModel):
     top_k: Optional[int] = 4
 
 # ---------- Endpoints ----------
+@app.get("/")
+def root():
+    return {"message": "Backend running"}
+
 @app.get("/health")
 def health():
     return {"ok": True}
