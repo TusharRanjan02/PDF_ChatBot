@@ -1,23 +1,24 @@
 # frontend/app.py
-import os
 import uuid
 import requests
 import streamlit as st
-from dotenv import load_dotenv
 
-load_dotenv()
+# Use Render backend URL; optional fallback for local testing
 DEFAULT_BACKEND = st.secrets.get("BACKEND_URL", "https://pdf-chatbot-7l3v.onrender.com")
 
 st.set_page_config(page_title="PDF Chatbot", layout="wide")
 st.title("🧠 PDF Chatbot")
 
+# Session ID
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
+# Sidebar settings
 with st.sidebar:
     st.subheader("Settings")
-    backend_url = st.text_input("Backend URL", DEFAULT_BACKEND)
+    backend_url = DEFAULT_BACKEND  # always use deployed backend
     top_k = st.slider("Top K chunks", 1, 8, 4)
+
     if st.button("Reset Memory"):
         try:
             r = requests.post(f"{backend_url}/reset", params={"session_id": st.session_state.session_id}, timeout=30)
@@ -37,7 +38,7 @@ with st.sidebar:
                 files = {"file": (f.name, f.getvalue(), f.type or "application/octet-stream")}
                 data = {"session_id": st.session_state.session_id}
                 try:
-                    r = requests.post(f"{backend_url}/ingest", files=files, data=data, timeout=120)
+                    r = requests.post(f"{backend_url}/ingest", files=files, data=data, timeout=180)
                     if r.ok:
                         res = r.json()
                         if res.get("ok"):
@@ -49,25 +50,22 @@ with st.sidebar:
                 except Exception as e:
                     st.error(f"Ingest failed: {e}")
 
+# Chat area
 st.markdown("### Chat")
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# render history
+# Render previous messages
 for role, message in st.session_state.history:
     if role == "user":
         st.markdown(f"**You:** {message}")
     else:
         st.markdown(f"**Assistant:** {message}")
 
+# Chat input
 prompt = st.chat_input("Ask a question...")
 if prompt:
     st.session_state.history.append(("user", prompt))
-    backend_url = st.sidebar.text_input(
-    "Backend URL",
-    DEFAULT_BACKEND,
-    key="backend_url_input"
-    )  # read latest
     with st.spinner("Thinking..."):
         try:
             payload = {"session_id": st.session_state.session_id, "message": prompt, "top_k": top_k}
